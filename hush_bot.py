@@ -10,13 +10,10 @@ BOT_TOKEN = os.getenv("BOT_TOKEN")
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     await update.message.reply_text(f"Hello! You can now send me another user's ID and I will HUSH them.")
 
-def main() -> None:
+if __name__ == '__main__':
     app = ApplicationBuilder().token(BOT_TOKEN).build()
 
     app.add_handler(CommandHandler("start", start))
 
     app.run_polling()
-
-if __name__ == '__main__':
-    main()
 
