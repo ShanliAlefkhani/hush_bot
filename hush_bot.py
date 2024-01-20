@@ -78,10 +78,11 @@ async def hush_user(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     if target_username[0] == '@':
         target_username = target_username[1:]
     target_user_id = get_user_id_from_username(target_username)
-    message_text = "HUSH"
-
-    await context.bot.send_message(chat_id=target_user_id, text=message_text)
-    await update.message.reply_text(f"Message sent to user with ID {target_username}.")
+    if target_user_id:
+        await context.bot.send_message(chat_id=target_user_id, text="HUSH")
+        await update.message.reply_text(f"Message sent to user with ID {target_username}.")
+        return
+    await update.message.reply_text("This user has not started the bot yet! You can share the bot with them.")
 
 
 if __name__ == '__main__':
