@@ -15,6 +15,7 @@ DB_PASSWORD = os.getenv("DB_PASSWORD")
 
 
 def save_user_info(username, chat_id):
+    connection = None
     try:
         connection = psycopg2.connect(
             host=DB_HOST,
@@ -42,6 +43,7 @@ def save_user_info(username, chat_id):
 
 
 def get_user_id_from_username(username):
+    connection = None
     try:
         connection = psycopg2.connect(
             host=DB_HOST,
