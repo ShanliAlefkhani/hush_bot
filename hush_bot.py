@@ -32,8 +32,8 @@ def save_user_info(username, chat_id):
         username = username.lower()
 
         cursor.execute(
-            "INSERT INTO user_info (username, chat_id) VALUES (%s, %s) ON CONFLICT (username) DO UPDATE SET chat_id = "
-            "EXCLUDED.chat_id",
+            "INSERT INTO user_info (username, chat_id) VALUES (%s, %s) ON CONFLICT (chat_id) DO UPDATE SET username = "
+            "EXCLUDED.username",
             (username, chat_id)
         )
 
