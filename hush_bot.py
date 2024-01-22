@@ -1,97 +1,71 @@
 import os
 from dotenv import load_dotenv
-import psycopg2
 from telegram import Update
 from telegram.ext import filters, ApplicationBuilder, CommandHandler, ConversationHandler, MessageHandler, ContextTypes
+from sqlalchemy import create_engine, Column, Integer, String, Text
+from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import sessionmaker
+
 
 load_dotenv()
 
 BOT_TOKEN = os.getenv("BOT_TOKEN")
-DB_HOST = os.getenv("DB_HOST")
-DB_PORT = os.getenv("DB_PORT")
-DB_NAME = os.getenv("DB_NAME")
-DB_USER = os.getenv("DB_USER")
-DB_PASSWORD = os.getenv("DB_PASSWORD")
+DATABASE_URL = os.getenv("DATABASE_URL")
 
 FEEDBACK_MESSAGE = range(1)
 
+engine = create_engine(DATABASE_URL)
+Session = sessionmaker(bind=engine)
+Base = declarative_base()
+
+
+class UserInfo(Base):
+    __tablename__ = 'user_info'
+
+    id = Column(Integer, primary_key=True)
+    username = Column(String(255))
+    chat_id = Column(Integer, unique=True)
+
+
+class Feedback(Base):
+    __tablename__ = 'feedback'
+
+    id = Column(Integer, primary_key=True)
+    username = Column(String(255))
+    chat_id = Column(Integer)
+    message = Column(Text)
+
 
 def save_user_info(username, chat_id):
-    connection = None
+    session = Session()
     try:
-        connection = psycopg2.connect(
-            host=DB_HOST,
-            port=DB_PORT,
-            database=DB_NAME,
-            user=DB_USER,
-            password=DB_PASSWORD
-        )
-
-        cursor = connection.cursor()
-
-        username = username.lower()
-
-        cursor.execute(
-            "INSERT INTO user_info (username, chat_id) VALUES (%s, %s) ON CONFLICT (chat_id) DO UPDATE SET username = "
-            "EXCLUDED.username",
-            (username, chat_id)
-        )
-
-        connection.commit()
-
+        if user := session.query(UserInfo).filter_by(chat_id=chat_id).first():
+            user.username = username
+        else:
+            session.add(UserInfo(username=username, chat_id=chat_id))
+        session.commit()
     finally:
-        if connection:
-            connection.close()
+        session.close()
 
 
 def save_feedback(username, chat_id, message):
-    connection = None
+    session = Session()
     try:
-        connection = psycopg2.connect(
-            host=DB_HOST,
-            port=DB_PORT,
-            database=DB_NAME,
-            user=DB_USER,
-            password=DB_PASSWORD
-        )
-
-        cursor = connection.cursor()
-
-        cursor.execute(
-            "INSERT INTO feedback (username, chat_id, message) VALUES (%s, %s, %s)",
-            (username, chat_id, message)
-        )
-
-        connection.commit()
-
+        session.add(Feedback(username=username, chat_id=chat_id, message=message))
+        session.commit()
     finally:
-        if connection:
-            connection.close()
+        session.close()
 
 
-def get_user_id_from_username(username):
-    connection = None
+def get_chat_id_from_username(username):
+    session = Session()
     try:
-        connection = psycopg2.connect(
-            host=DB_HOST,
-            port=DB_PORT,
-            database=DB_NAME,
-            user=DB_USER,
-            password=DB_PASSWORD
-        )
-
-        cursor = connection.cursor()
-
-        username = username.lower()
-
-        cursor.execute("SELECT chat_id FROM user_info WHERE username = %s", (username,))
-        result = cursor.fetchone()
-
-        return result[0] if result else None
-
+        if user := session.query(UserInfo).filter_by(username=username).first():
+            return user.chat_id
+        else:
+            return None
     finally:
-        if connection:
-            connection.close()
+        session.close()
 
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -135,9 +109,9 @@ async def hush_user(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     target_username = update.message.text
     if target_username[0] == '@':
         target_username = target_username[1:]
-    target_user_id = get_user_id_from_username(target_username)
-    if target_user_id:
-        await context.bot.send_message(chat_id=target_user_id, text="HUSH")
+    target_chat_id = get_chat_id_from_username(target_username)
+    if target_chat_id:
+        await context.bot.send_message(chat_id=target_chat_id, text="HUSH")
         await update.message.reply_text(f"Message sent to user with ID {target_username}.")
         return
     await update.message.reply_text("This user has not started the bot yet! You can share the bot with them.")

@@ -16,6 +16,8 @@ services:
     depends_on:
       - postgres
     command: python hush_bot.py
+    environment:
+      DATABASE_URL: postgresql://${DB_USER}:${DB_PASSWORD}@${DB_HOST}:${DB_PORT}/${DB_NAME}
 
 volumes:
   postgres_data:
