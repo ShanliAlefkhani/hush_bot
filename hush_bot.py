@@ -97,7 +97,8 @@ def get_user_id_from_username(username):
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     user_id = update.message.from_user.id
     username = update.message.from_user.username
-    save_user_info(username, user_id)
+    if username:
+        save_user_info(username, user_id)
 
     await update.message.reply_text(f"Hello! You can now send me another user's ID and I will HUSH them.")
 
@@ -112,6 +113,8 @@ async def feedback_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     username = update.message.from_user.username
     message = update.message.text
 
+    if username:
+        save_user_info(username, chat_id)
     save_feedback(username, chat_id, message)
 
     await update.message.reply_text("Thank you for your feedback.")
@@ -124,6 +127,11 @@ async def cancel(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 async def hush_user(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    user_id = update.message.from_user.id
+    username = update.message.from_user.username
+    if username:
+        save_user_info(username, user_id)
+
     target_username = update.message.text
     if target_username[0] == '@':
         target_username = target_username[1:]
