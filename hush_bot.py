@@ -44,7 +44,7 @@ def save_user_info(username, chat_id):
             connection.close()
 
 
-def save_feedback(username, message_text):
+def save_feedback(username, chat_id, message):
     connection = None
     try:
         connection = psycopg2.connect(
@@ -58,8 +58,8 @@ def save_feedback(username, message_text):
         cursor = connection.cursor()
 
         cursor.execute(
-            "INSERT INTO feedback (username, message_text) VALUES (%s, %s)",
-            (username, message_text)
+            "INSERT INTO feedback (username, chat_id, message) VALUES (%s, %s, %s)",
+            (username, chat_id, message)
         )
 
         connection.commit()
@@ -108,9 +108,11 @@ async def feedback(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 async def feedback_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    chat_id = update.message.from_user.id
     username = update.message.from_user.username
-    message_text = update.message.text
-    save_feedback(username, message_text)
+    message = update.message.text
+
+    save_feedback(username, chat_id, message)
 
     await update.message.reply_text("Thank you for your feedback.")
     return ConversationHandler.END
