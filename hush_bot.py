@@ -23,7 +23,7 @@ class UserInfo(Base):
     __tablename__ = 'user_info'
 
     username = Column(Text)
-    chat_id = Column(Integer, unique=True)
+    chat_id = Column(Integer, unique=True, primary_key=True)
 
 
 class Feedback(Base):
