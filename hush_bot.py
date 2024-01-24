@@ -3,8 +3,7 @@ from dotenv import load_dotenv
 from telegram import Update
 from telegram.ext import filters, ApplicationBuilder, CommandHandler, ConversationHandler, MessageHandler, ContextTypes
 from sqlalchemy import create_engine, Column, Integer, String, Text
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.orm import declarative_base, sessionmaker
 
 
 load_dotenv()
@@ -29,7 +28,7 @@ class UserInfo(Base):
 class Feedback(Base):
     __tablename__ = 'feedback'
 
-    id = Column(Integer, primary_key=True)
+    id = Column(Integer, primary_key=True, autoincrement=True)
     username = Column(Text)
     chat_id = Column(Integer)
     message = Column(Text)
@@ -38,6 +37,7 @@ class Feedback(Base):
 def save_user_info(username, chat_id):
     session = Session()
     try:
+        username = username.lower()
         if user := session.query(UserInfo).filter_by(chat_id=chat_id).first():
             user.username = username
         else:
@@ -59,6 +59,7 @@ def save_feedback(username, chat_id, message):
 def get_chat_id_from_username(username):
     session = Session()
     try:
+        username = username.lower()
         if user := session.query(UserInfo).filter_by(username=username).first():
             return user.chat_id
         else:
