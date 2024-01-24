@@ -22,16 +22,14 @@ Base = declarative_base()
 class UserInfo(Base):
     __tablename__ = 'user_info'
 
-    id = Column(Integer, primary_key=True)
-    username = Column(String(255))
+    username = Column(Text)
     chat_id = Column(Integer, unique=True)
 
 
 class Feedback(Base):
     __tablename__ = 'feedback'
 
-    id = Column(Integer, primary_key=True)
-    username = Column(String(255))
+    username = Column(Text)
     chat_id = Column(Integer)
     message = Column(Text)
 
