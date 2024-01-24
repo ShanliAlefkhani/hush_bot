@@ -29,6 +29,7 @@ class UserInfo(Base):
 class Feedback(Base):
     __tablename__ = 'feedback'
 
+    id = Column(Integer, primary_key=True)
     username = Column(Text)
     chat_id = Column(Integer)
     message = Column(Text)
