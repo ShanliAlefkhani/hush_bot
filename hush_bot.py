@@ -11,7 +11,7 @@ load_dotenv()
 BOT_TOKEN = os.getenv("BOT_TOKEN")
 DATABASE_URL = os.getenv("DATABASE_URL")
 
-FEEDBACK_MESSAGE = range(1)
+FEEDBACK_MESSAGE, XOXO_MESSAGE = range(2)
 
 engine = create_engine(DATABASE_URL)
 Session = sessionmaker(bind=engine)
@@ -77,7 +77,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     await update.message.reply_text(f"Hello! You can now send me another user's ID and I will HUSH them.")
 
 
-async def feedback(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def feedback(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     await update.message.reply_text("Please send your feedback.")
     return FEEDBACK_MESSAGE
 
@@ -100,7 +100,7 @@ async def cancel(update: Update, context: ContextTypes.DEFAULT_TYPE):
     return ConversationHandler.END
 
 
-async def hush_user(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+async def send_message_to_user(update: Update, context: ContextTypes.DEFAULT_TYPE, text) -> None:
     user_id = update.message.from_user.id
     username = update.message.from_user.username
     if username:
@@ -111,10 +111,25 @@ async def hush_user(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         target_username = target_username[1:]
     target_chat_id = get_chat_id_from_username(target_username)
     if target_chat_id:
-        await context.bot.send_message(chat_id=target_chat_id, text="HUSH")
+        await context.bot.send_message(chat_id=target_chat_id, text=text)
         await update.message.reply_text(f"Message sent to user with ID {target_username}.")
         return
     await update.message.reply_text("This user has not started the bot yet! You can share the bot with them.")
+
+
+async def hush_user(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    await send_message_to_user(update, context, "HUSH")
+    return
+
+
+async def xoxo(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+    await update.message.reply_text("Please send a username.")
+    return XOXO_MESSAGE
+
+
+async def xoxo_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    await send_message_to_user(update, context, "XOXO")
+    return
 
 
 if __name__ == '__main__':
@@ -128,6 +143,13 @@ if __name__ == '__main__':
             FEEDBACK_MESSAGE: [MessageHandler(filters.TEXT & ~filters.COMMAND, feedback_message)],
         },
     ))
+    app.add_handler(ConversationHandler(
+        entry_points=[CommandHandler('xoxo', xoxo)],
+        fallbacks=[CommandHandler("cancel", cancel)],
+        states={
+            XOXO_MESSAGE: [MessageHandler(filters.TEXT & ~filters.COMMAND, xoxo_message)],
+        },
+    )),
     app.add_handler(MessageHandler(filters.TEXT & (~filters.COMMAND), hush_user))
 
     app.run_polling()
